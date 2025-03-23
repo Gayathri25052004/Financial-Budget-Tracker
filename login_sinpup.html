@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign-Up & Personal Finance Tracker</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lobster&family=Merriweather:wght@400&display=swap">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('a.jpg');
+            /* Replace with actual image file or URL */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .header h2 {
+            font-family: 'Playfair Display', serif;
+            color: black;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin: 0;
+        }
+
+        .container {
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.5);
+            position: relative;
+            z-index: 1;
+            margin-top: 100px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-size: 1em;
+        }
+
+        .tab-button.active {
+            background-color: #45a049;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .quote {
+            margin-top: 50px;
+            font-size: 1.5em;
+            font-family: 'Merriweather', serif;
+            color: black;
+            text-align: center;
+            max-width: 80%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h2>Welcome to Personal Finance Tracker - For Financial Stability</h2>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="showForm('signup')">Sign Up</button>
+            <button class="tab-button" onclick="showForm('login')">Login</button>
+        </div>
+
+        <div id="signup" class="form-container active">
+            <h1>Sign Up</h1>
+            <form onsubmit="handleSignup(event)">
+                <input type="text" placeholder="Username" required><br>
+                <input type="email" placeholder="Email" required><br>
+                <input type="password" placeholder="Password" required><br>
+                <input type="submit" value="Sign Up">
+            </form>
+        </div>
+
+        <div id="login" class="form-container">
+            <h1>Login</h1>
+            <form onsubmit="handleLogin(event)">
+                <input type="email" placeholder="Email" required><br>
+                <input type="password" placeholder="Password" required><br>
+                <input type="submit" value="Login">
+            </form>
+        </div>
+    </div>
+
+    <div class="quote" id="quote"></div>
+
+    <script>
+        function showForm(formId) {
+            document.querySelectorAll('.form-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById(formId).classList.add('active');
+            document.querySelector(`.tab-button[onclick="showForm('${formId}')"]`).classList.add('active');
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            const username = event.target[0].value;
+            const email = event.target[1].value;
+            const password = event.target[2].value;
+
+            const response = await fetch('http://localhost:5000/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+            alert(data.message);
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = event.target[0].value;
+            const password = event.target[1].value;
+
+            const response = await fetch('http://localhost:5000/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                alert('Login successful');
+            } else {
+                alert(data.error);
+            }
+        }
+    </script>
+</body>
+
+</html>

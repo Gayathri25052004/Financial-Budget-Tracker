@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="./favicon_io/android-chrome-512x512.png" sizes="64x64" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" />
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <title>Finance Tracker - A Personal Finance App</title>
+</head>
+<body style="background-image: url('./assets/tracker-bg.jpg'); background-size: cover; background-repeat: no-repeat;">
+    <nav>
+        <div class="navbar">
+            <a href="index.html" class="logo">
+                <img src="./logo.png" alt="MoneyMap Logo" style="height: 40px; vertical-align: middle;">  MoneyMap 
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="tracker.html">Use Tracker</a></li>
+                <li><a href="how-it-works.html">How it works</a></li>
+                <li><a href="./support.html">Support</a></li>
+            </ul>
+            <div class="buttons">
+                <a href="./login_sinpup.html" class="btn-head">
+                    <i class="fas fa-sign-in-alt"></i> Log In
+                </a>
+                <a href="./login_sinpup.html" class="btn-head">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="main-content" id="tracker">
+        <div class="head-text">
+            <h1>Access Your Personal Finance Tracker</h1>
+            <div class="under-head-text"></div>
+        </div>
+        <br />
+
+        <div class="tracker-part">
+            <div class="tracker-balance">
+                Current Balance: <span id="balance" class="current-balance"></span>
+            </div>
+
+            <div class="currency-filter">
+                <div class="filter-left">
+                    <label for="currency">Select Currency:</label>
+                    <select id="currency" onchange="updateBalance()">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="INR" selected>INR</option>
+                    </select>
+                </div>
+                <div class="filter-right">
+                    <label for="text" class="date-box">Choose Date:</label>
+                    <input type="date" id="date" placeholder="Date" />
+                </div>
+            </div>
+
+            <div class="transaction-form">
+                <input type="text" id="description" placeholder="Description" />
+                <input type="number" id="amount" placeholder="Amount" />
+                <select id="type">
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <button onclick="addTransaction()">Add Transaction</button>
+                <button onclick="handleDownload()">Export</button>
+            </div>
+            <div class="table-part" id="table-part">
+                <table id="transaction-table">
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Action</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer">
+            <p>Created by Neeraj Meena, Full Stack MERN Developer</p>
+        </div>
+    </footer>
+    <script>
+        feather.replace();
+    </script>
+    <script src="script.js"></script>
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+</body>
+</html>

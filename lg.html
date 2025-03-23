@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign-Up & Personal Finance Tracker</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lobster&family=Merriweather:wght@400&display=swap">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('bg.jpg');
+            /* Replace with actual image file or URL */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            position: relative;
+            padding-right: 50px;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .header h2 {
+            font-family: 'Playfair Display', serif;
+            color: black;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin: 0;
+        }
+
+        .quote {
+            font-family: 'Merriweather', serif;
+            font-style: italic;
+            color: black;
+            text-align: center;
+            font-size: 1.5em;
+            max-width: 40%;
+            margin-left: 50px;
+        }
+
+        .container {
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.6);
+            position: relative;
+            z-index: 1;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-size: 1em;
+        }
+
+        .tab-button.active {
+            background-color: #45a049;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: none;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>Welcome to Personal Finance Tracker - For Financial Stability</h2>
+    </div>
+
+    <div class="quote" id="quote"></div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="showForm('signup')">Sign Up</button>
+            <button class="tab-button" onclick="showForm('login')">Login</button>
+        </div>
+
+        <div id="signup" class="form-container active">
+            <h1>Sign Up</h1>
+            <form onsubmit="handleSignup(event)">
+                <input type="text" placeholder="Username" required><br>
+                <input type="email" placeholder="Email" required><br>
+                <input type="password" placeholder="Password" required><br>
+                <input type="submit" value="Sign Up">
+            </form>
+        </div>
+
+        <div id="login" class="form-container">
+            <h1>Login</h1>
+            <form onsubmit="handleLogin(event)">
+                <input type="email" placeholder="Email" required><br>
+                <input type="password" placeholder="Password" required><br>
+                <input type="submit" value="Login">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const quotes = [
+            "Do not save what is left after spending, but spend what is left after saving.",
+            "A budget is telling your money where to go instead of wondering where it went.",
+            "Wealth consists not in having great possessions, but in having few wants.",
+            "The goal isn’t more money. The goal is living life on your terms.",
+            "An investment in knowledge pays the best interest.",
+            "Financial freedom is available to those who learn about it and work for it.",
+            "Beware of little expenses; a small leak will sink a great ship."
+        ];
+
+        document.getElementById('quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+    </script>
+
+</body>
+
+</html>
