@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign-Up & Personal Finance Tracker</title>
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lobster&family=Merriweather:wght@400&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lobster&family=Merriweather:wght@400&display=swap">
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-image: url('a.jpg');
-            /* Replace with actual image file or URL */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -119,7 +117,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="header">
         <h2>Welcome to Personal Finance Tracker - For Financial Stability</h2>
@@ -134,9 +131,9 @@
         <div id="signup" class="form-container active">
             <h1>Sign Up</h1>
             <form onsubmit="handleSignup(event)">
-                <input type="text" placeholder="Username" required><br>
-                <input type="email" placeholder="Email" required><br>
-                <input type="password" placeholder="Password" required><br>
+                <input type="text" id="signup-username" placeholder="Username" required><br>
+                <input type="email" id="signup-email" placeholder="Email" required><br>
+                <input type="password" id="signup-password" placeholder="Password" required><br>
                 <input type="submit" value="Sign Up">
             </form>
         </div>
@@ -144,8 +141,8 @@
         <div id="login" class="form-container">
             <h1>Login</h1>
             <form onsubmit="handleLogin(event)">
-                <input type="email" placeholder="Email" required><br>
-                <input type="password" placeholder="Password" required><br>
+                <input type="text" id="login-username" placeholder="Username" required><br>
+                <input type="password" id="login-password" placeholder="Password" required><br>
                 <input type="submit" value="Login">
             </form>
         </div>
@@ -167,40 +164,68 @@
 
         async function handleSignup(event) {
             event.preventDefault();
-            const username = event.target[0].value;
-            const email = event.target[1].value;
-            const password = event.target[2].value;
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
 
-            const response = await fetch('http://localhost:5000/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
-            });
+            try {
+                const response = await fetch('http://localhost:3000/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
 
-            const data = await response.json();
-            alert(data.message);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Signup failed');
+                }
+
+                const data = await response.json();
+                console.log('Signup response:', data);
+                if (data.id) {
+                    localStorage.setItem('userId', data.id);
+                    alert('Signup successful! Redirecting to tracker...');
+                    window.location.href = 'tracker.html';
+                } else {
+                    alert('Signup failed: No user ID received');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                alert('Signup error: ' + error.message);
+            }
         }
 
         async function handleLogin(event) {
             event.preventDefault();
-            const email = event.target[0].value;
-            const password = event.target[1].value;
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
 
-            const response = await fetch('http://localhost:5000/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
 
-            const data = await response.json();
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                alert('Login successful');
-            } else {
-                alert(data.error);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Login failed');
+                }
+
+                const data = await response.json();
+                console.log('Login response:', data);
+                if (data.userId) {
+                    localStorage.setItem('userId', data.userId);
+                    alert('Login successful! Redirecting to tracker...');
+                    window.location.href = 'tracker.html';
+                } else {
+                    alert('Login failed: No user ID received');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login error: ' + error.message);
             }
         }
     </script>
 </body>
-
 </html>

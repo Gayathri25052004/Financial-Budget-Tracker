@@ -1,394 +1,265 @@
-// Get the table-part element and the transaction-table
+// Check if user is logged in
+let currentUserId = localStorage.getItem('userId');
+if (!currentUserId) {
+    window.location.href = 'login_signup.html'; // Updated to match your filename
+}
+
 const tablePart = document.querySelector(".table-part");
 const transactionTable = document.getElementById("transaction-table");
+let transactions = [];
+let editedTransaction = null;
 
-// Function to check the number of entries and apply scrollbar if needed
+// Scroll check function
 function checkTableScroll() {
-    const rowCount = transactionTable.rows.length - 1; // Exclude the header row
-    const maxRowCount = 10; // Set the desired maximum number of entries
+    const rowCount = transactionTable.rows.length - 1;
+    const maxRowCount = 10;
+    tablePart.classList.toggle("scrollable", rowCount > maxRowCount);
+}
 
-    if (rowCount > maxRowCount) {
-        tablePart.classList.add("scrollable");
-    } else {
-        tablePart.classList.remove("scrollable");
+const observer = new MutationObserver(checkTableScroll);
+observer.observe(transactionTable, { childList: true, subtree: true });
+
+// Fetch expenses from backend
+async function fetchExpenses() {
+    try {
+        const response = await fetch(`http://localhost:3000/api/expenses/${currentUserId}`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch expenses');
+        }
+        transactions = await response.json();
+        console.log('Fetched transactions:', transactions); // Debug
+        transactions = transactions.map(t => ({
+            id: t.id, // Store the backend ID for edit/delete
+            primeId: new Date(t.date).getTime(),
+            description: t.description,
+            amount: t.amount,
+            type: t.type === 'income' ? 'income' : 'expense'
+        }));
+        updateTransactionTable();
+        updateBalance();
+    } catch (error) {
+        console.error('Error fetching expenses:', error);
+        alert('Error fetching expenses: ' + error.message);
     }
 }
 
-// Call the function initially and whenever there is a change in the table
-checkTableScroll();
+// Add transaction
+async function addTransaction() {
+    const description = document.getElementById("description").value;
+    const amount = parseFloat(document.getElementById("amount").value);
+    const type = document.getElementById("type").value;
+    const date = document.getElementById("date").value;
 
-// Add an event listener for changes in the table
-const observer = new MutationObserver(checkTableScroll);
-observer.observe(transactionTable, {
-    childList: true,
-    subtree: true,
-});
-
-// Initialize an empty array to store the transactions
-let transactions = [];
-
-// Variable to store the current transaction being edited
-let editedTransaction = null;
-
-// Function to add a new transaction
-function addTransaction() {
-    const descriptionInput = document.getElementById("description");
-    const amountInput = document.getElementById("amount");
-    const typeInput = document.getElementById("type");
-    const dateInput = document.getElementById("date");
-
-    const description = descriptionInput.value;
-    const amount = parseFloat(amountInput.value);
-    const type = typeInput.value;
-    const chosenDate = new Date(dateInput.value);
-
-    // Clear the input fields
-    descriptionInput.value = "";
-    amountInput.value = "";
-    dateInput.value = "";
-
-    // Validate the input
-    if (description.trim() === "" || isNaN(amount) || isNaN(chosenDate)) {
+    if (!description.trim() || isNaN(amount) || !date) {
+        alert('Please fill in all fields: Description, Amount, and Date');
         return;
     }
 
-    // Create a new transaction object
-    const transaction = {
-        primeId: chosenDate.getTime(),
-        description: description,
-        amount: amount,
-        type: type,
-    };
-
-    // Add the transaction to the array
-    transactions.push(transaction);
-
-    // Update the balance
-    updateBalance();
-
-    // Update the transaction table
-    updateTransactionTable();
-}
-
-// Function to delete a transaction
-function deleteTransaction(primeId) {
-    // Find the index of the transaction with the given primeId
-    const index = transactions.findIndex(
-        (transaction) => transaction.primeId === primeId
-    );
-
-    // Remove the transaction from the array
-    if (index > -1) {
-        transactions.splice(index, 1);
+    try {
+        const response = await fetch(`http://localhost:3000/api/expenses`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: currentUserId, description, amount, date, type })
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to add transaction');
+        }
+        document.getElementById("description").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("date").value = "";
+        document.getElementById("type").value = "income"; // Reset to default
+        fetchExpenses();
+    } catch (error) {
+        console.error('Error adding transaction:', error);
+        alert('Error adding transaction: ' + error.message);
     }
-
-    // Update the balance
-    updateBalance();
-
-    // Update the transaction table
-    updateTransactionTable();
 }
 
-// Function to edit a transaction
-function editTransaction(primeId) {
-    // Find the transaction with the given primeId
-    const transaction = transactions.find(
-        (transaction) => transaction.primeId === primeId
-    );
+// Delete transaction
+async function deleteTransaction(primeId) {
+    const transaction = transactions.find(t => t.primeId === primeId);
+    if (!transaction) return;
 
-    // Populate the input fields with the transaction details for editing
+    try {
+        const response = await fetch(`http://localhost:3000/api/expenses/${transaction.id}`, {
+            method: "DELETE"
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete transaction');
+        }
+        fetchExpenses();
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Error deleting transaction: ' + error.message);
+    }
+}
+
+// Edit transaction
+function editTransaction(primeId) {
+    const transaction = transactions.find(t => t.primeId === primeId);
+    if (!transaction) return;
+
     document.getElementById("description").value = transaction.description;
     document.getElementById("amount").value = transaction.amount;
     document.getElementById("type").value = transaction.type;
+    document.getElementById("date").value = new Date(transaction.primeId).toISOString().split('T')[0];
 
-    // Store the current transaction being edited
     editedTransaction = transaction;
-
-    // Show the Save button and hide the Add Transaction button
     document.getElementById("add-transaction-btn").style.display = "none";
-    document.getElementById("save-transaction-btn").style.display =
-        "inline-block";
-
-    // Set the date input value to the chosen date
-    const dateInput = document.getElementById("date");
-    const chosenDate = new Date(transaction.primeId);
-    const formattedDate = formatDate(chosenDate);
-    dateInput.value = formattedDate;
+    document.getElementById("save-transaction-btn").style.display = "inline-block";
 }
 
-// Function to save the edited transaction
-function saveTransaction() {
-    if (!editedTransaction) {
-        return;
-    }
-    const descriptionInput = document.getElementById("description");
-    const amountInput = document.getElementById("amount");
-    const typeInput = document.getElementById("type");
-    const dateInput = document.getElementById("date");
+// Save edited transaction
+async function saveTransaction() {
+    if (!editedTransaction) return;
 
-    const description = descriptionInput.value;
-    const amount = parseFloat(amountInput.value);
-    const type = typeInput.value;
-    const chosenDate = new Date(dateInput.value);
+    const description = document.getElementById("description").value;
+    const amount = parseFloat(document.getElementById("amount").value);
+    const type = document.getElementById("type").value;
+    const date = document.getElementById("date").value;
 
-    // Validate the input
-    if (description.trim() === "" || isNaN(amount) || isNaN(chosenDate)) {
+    if (!description.trim() || isNaN(amount) || !date) {
+        alert('Please fill in all fields: Description, Amount, and Date');
         return;
     }
 
-    // Update the transaction details
-    editedTransaction.description = description;
-    editedTransaction.amount = amount;
-    editedTransaction.type = type;
-    editedTransaction.primeId = chosenDate.getTime();
-
-    // Clear the input fields
-    descriptionInput.value = "";
-    amountInput.value = "";
-    dateInput.value = "";
-
-    // Clear the edited transaction
-    editedTransaction = null;
-
-    // Update the balance
-    updateBalance();
-
-    // Update the transaction table
-    updateTransactionTable();
-
-    // Show the Add Transaction button and hide the Save button
-    document.getElementById("add-transaction-btn").style.display = "inline-block";
-    document.getElementById("save-transaction-btn").style.display = "none";
-}
-
-// Function to update the balance
-function updateBalance() {
-    const balanceElement = document.getElementById("balance");
-    let balance = 0.0;
-
-    // Calculate the total balance
-    transactions.forEach((transaction) => {
-        if (transaction.type === "income") {
-            balance += transaction.amount;
-        } else if (transaction.type === "expense") {
-            balance -= transaction.amount;
+    try {
+        const response = await fetch(`http://localhost:3000/api/expenses/${editedTransaction.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: currentUserId, description, amount, date, type })
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save transaction');
         }
-    });
-
-    // Format the balance with currency symbol
-    const currencySelect = document.getElementById("currency");
-    const currencyCode = currencySelect.value;
-    const formattedBalance = formatCurrency(balance, currencyCode);
-
-    // Update the balance display
-    balanceElement.textContent = formattedBalance;
-
-    // Check if the balance is negative or positive
-    if (balance < 0) {
-        balanceElement.classList.remove("positive-balance");
-        balanceElement.classList.add("negative-balance");
-    } else {
-        balanceElement.classList.remove("negative-balance");
-        balanceElement.classList.add("positive-balance");
+        document.getElementById("description").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("date").value = "";
+        document.getElementById("type").value = "income";
+        editedTransaction = null;
+        document.getElementById("add-transaction-btn").style.display = "inline-block";
+        document.getElementById("save-transaction-btn").style.display = "none";
+        fetchExpenses();
+    } catch (error) {
+        console.error('Error saving transaction:', error);
+        alert('Error saving transaction: ' + error.message);
     }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-    // Set initial balance value
+// Update balance
+function updateBalance() {
     let balance = 0.0;
-    updateBalance(balance); // Update the balance display
+    transactions.forEach(t => {
+        balance += t.type === "income" ? t.amount : -t.amount;
+    });
+    console.log('Calculated balance:', balance); // Debug
+    const currencyCode = document.getElementById("currency").value;
+    const formattedBalance = formatCurrency(balance, currencyCode);
+    const balanceElement = document.getElementById("balance");
+    balanceElement.textContent = formattedBalance;
+    balanceElement.classList.toggle("positive-balance", balance >= 0);
+    balanceElement.classList.toggle("negative-balance", balance < 0);
+}
 
-    // Other code for adding transactions, updating balance, etc.
-
-    // Function to update the balance display
-    function updateBalance(balance) {
-        const balanceElement = document.getElementById("balance");
-        balanceElement.textContent = balance.toFixed(2); // Format balance with 2 decimal places
-    }
-});
-// Function to format currency based on the selected currency code
+// Format currency
 function formatCurrency(amount, currencyCode) {
-    // Define currency symbols and decimal separators for different currency codes
-    const currencySymbols = {
-        USD: "$",
-        EUR: "€",
-        INR: "₹",
-    };
-
-    const decimalSeparators = {
-        USD: ".",
-        EUR: ",",
-        INR: ".",
-    };
-
-    // Get the currency symbol and decimal separator based on the currency code
+    const currencySymbols = { USD: "$", EUR: "€", INR: "₹" };
+    const decimalSeparators = { USD: ".", EUR: ",", INR: "." };
     const symbol = currencySymbols[currencyCode] || "";
     const decimalSeparator = decimalSeparators[currencyCode] || ".";
-
-    // Format the amount with currency symbol and decimal separator
-    const formattedAmount =
-        symbol + amount.toFixed(2).replace(".", decimalSeparator);
-    return formattedAmount;
+    return symbol + amount.toFixed(2).replace(".", decimalSeparator);
 }
 
-// Function to format date as DD/MM/YYYY
+// Format date
 function formatDate(date) {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    return `<span class="math-inline">\{day\}/</span>{month}/${year}`;
+    return `${day}/${month}/${year}`;
 }
 
-// Function to update the transaction table
+// Update transaction table
 function updateTransactionTable() {
-  const transactionTable = document.getElementById("transaction-table");
-  while (transactionTable.rows.length > 1) {
-      transactionTable.deleteRow(1);
-  }
-
-  transactions.forEach((transaction) => {
-      const newRow = transactionTable.insertRow();
-      
-      const dateCell = newRow.insertCell();
-      dateCell.textContent = formatDate(new Date(transaction.primeId));
-
-      const descriptionCell = newRow.insertCell();
-      descriptionCell.textContent = transaction.description;
-
-      const amountCell = newRow.insertCell();
-      const currencySelect = document.getElementById("currency");
-      const currencyCode = currencySelect.value;
-      const formattedAmount = formatCurrency(transaction.amount, currencyCode);
-      amountCell.textContent = formattedAmount;
-
-      const typeCell = newRow.insertCell();
-      typeCell.textContent = transaction.type;
-
-      const actionCell = newRow.insertCell();
-        const editButton = document.createElement("button");
-        editButton.textContent = "Edit";
-        editButton.classList.add("edit-button");
-        editButton.addEventListener("click", () =>
-            editTransaction(transaction.primeId)
-        );
-        actionCell.appendChild(editButton);
-
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete";
-        deleteButton.classList.add("delete-button");
-        deleteButton.addEventListener("click", () =>
-            deleteTransaction(transaction.primeId)
-        );
-        actionCell.appendChild(deleteButton);
-
-        const saveButton = document.createElement("button");
-        saveButton.textContent = "Save";
-        saveButton.classList.add("save-button");
-        saveButton.addEventListener("click", () =>
-            saveTransaction(transaction.primeId)
-        );
-        actionCell.appendChild(saveButton);
-    });
-}
-
-function formatDate(date) {
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
-// Event listener for the Add Transaction button
-document
-    .getElementById("add-transaction-btn")
-    .addEventListener("click", addTransaction);
-
-// Event listener for the Save Transaction button
-document
-    .getElementById("save-transaction-btn")
-    .addEventListener("click", saveTransaction);
-
-// Initial update of the balance and transaction table
-updateBalance();
-updateTransactionTable();
-
-// Function to handle the download of data in PDF and CSV formats
-function handleDownload() {
-    // Prompt the user to select the export format
-    const exportFormat = prompt("Select export format: PDF or CSV").toLowerCase();
-
-    if (exportFormat === "pdf") {
-        // Call a function to export data to PDF
-        exportToPDF();
-    } else if (exportFormat === "csv") {
-        // Call a function to export data to CSV
-        exportToCSV();
-    } else {
-        alert('Invalid export format. Please enter either "PDF" or "CSV".');
+    while (transactionTable.rows.length > 1) {
+        transactionTable.deleteRow(1);
     }
+    console.log('Updating table with transactions:', transactions); // Debug
+    const currencyCode = document.getElementById("currency").value;
+    transactions.forEach(t => {
+        const row = transactionTable.insertRow();
+        row.insertCell().textContent = formatDate(new Date(t.primeId));
+        row.insertCell().textContent = t.description;
+        row.insertCell().textContent = formatCurrency(t.amount, currencyCode);
+        row.insertCell().textContent = t.type;
+
+        const actionCell = row.insertCell();
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.classList.add("edit-button");
+        editBtn.addEventListener("click", () => editTransaction(t.primeId));
+        actionCell.appendChild(editBtn);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.classList.add("delete-button");
+        deleteBtn.addEventListener("click", () => deleteTransaction(t.primeId));
+        actionCell.appendChild(deleteBtn);
+    });
+    checkTableScroll();
 }
 
-// Function to export data to PDF
+// Event listeners
+document.getElementById("add-transaction-btn").addEventListener("click", () => {
+    console.log('Add Transaction button clicked'); // Debug
+    addTransaction();
+});
+document.getElementById("save-transaction-btn").addEventListener("click", saveTransaction);
+document.getElementById("currency").addEventListener("change", () => {
+    updateBalance();
+    updateTransactionTable();
+});
+
+// Initial load
+window.addEventListener("DOMContentLoaded", fetchExpenses);
+
+// Export functions
+function handleDownload() {
+    const exportFormat = prompt("Select export format: PDF or CSV").toLowerCase();
+    if (exportFormat === "pdf") exportToPDF();
+    else if (exportFormat === "csv") exportToCSV();
+    else alert('Invalid export format. Please enter either "PDF" or "CSV".');
+}
+
 function exportToPDF() {
-    // Define the document content using pdfMake syntax
     const docDefinition = {
-        content: [
-            {
-                table: {
-                    headerRows: 1,
-                    widths: ["auto", "*", "auto", "auto"],
-                    body: [
-                        [
-                            { text: "Date", style: "header" },
-                            { text: "Description", style: "header" },
-                            { text: "Amount", style: "header" },
-                            { text: "Type", style: "header" },
-                        ],
-                        // Add transaction data to the table body
-                        ...transactions.map((transaction) => {
-                            const date = formatDate(new Date(transaction.primeId));
-                            const description = transaction.description;
-                            const amount = transaction.amount;
-                            const type = transaction.type;
-
-                            return [date, description, amount.toString(), type];
-                        }),
-                    ],
-                },
-            },
-        ],
-        styles: {
-            header: {
-                fontSize: 12,
-                bold: true,
-                margin: [0, 5],
-            },
-        },
+        content: [{
+            table: {
+                headerRows: 1,
+                widths: ["auto", "*", "auto", "auto"],
+                body: [
+                    ["Date", "Description", "Amount", "Type"],
+                    ...transactions.map(t => [
+                        formatDate(new Date(t.primeId)),
+                        t.description,
+                        t.amount.toString(),
+                        t.type
+                    ])
+                ]
+            }
+        }],
+        styles: { header: { fontSize: 12, bold: true, margin: [0, 5] } }
     };
-
-    // Create the PDF document
     pdfMake.createPdf(docDefinition).download("transactions.pdf");
 }
 
-// Function to export data to CSV
 function exportToCSV() {
-    // Generate CSV content
-    const csvContent =
-        "Date,Description,Amount,Type\n" +
-        transactions
-            .map((transaction) => {
-                const date = formatDate(new Date(transaction.primeId));
-                const description = transaction.description;
-                const amount = transaction.amount;
-                const type = transaction.type;
-
-                return `${date},${description},${amount},${type}`;
-            })
-            .join("\n");
-    // Create a Blob with the CSV content
+    const csvContent = "Date,Description,Amount,Type\n" +
+        transactions.map(t => `${formatDate(new Date(t.primeId))},${t.description},${t.amount},${t.type}`).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-    // Create a link element and trigger a click to download the CSV file
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "transactions.csv";

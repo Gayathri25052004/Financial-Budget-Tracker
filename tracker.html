@@ -72,6 +72,18 @@
                 <button id="add-transaction-btn">Add Transaction</button>
                 <button onclick="handleDownload()">Export</button>
             </div>
+            <div class="transaction-form">
+                <input type="text" id="description" placeholder="Description" />
+                <input type="number" id="amount" placeholder="Amount" />
+                <select id="type">
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <input type="date" id="date" placeholder="Date" />
+                <button id="add-transaction-btn">Add Transaction</button>
+                <button id="save-transaction-btn" style="display: none;">Save</button>
+                <button onclick="handleDownload()">Export</button>
+            </div>
             <div class="table-part" id="table-part">
                 <table id="transaction-table">
                     <tr>
